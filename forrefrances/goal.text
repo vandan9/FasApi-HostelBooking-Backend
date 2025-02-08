@@ -1,0 +1,391 @@
+CREATE TABLE Users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    role ENUM('admin', 'hostel_owner', 'customer') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Hostels (
+    hostel_id INT PRIMARY KEY AUTO_INCREMENT,
+    owner_id INT,
+    name VARCHAR(100) NOT NULL,
+    address TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES Users(user_id)
+);
+CREATE TABLE Bookings (
+    booking_id INT PRIMARY KEY AUTO_INCREMENT,
+    hostel_id INT,
+    customer_id INT,
+    check_in_date DATE NOT NULL,
+    check_out_date DATE NOT NULL,
+    status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hostel_id) REFERENCES Hostels(hostel_id),
+    FOREIGN KEY (customer_id) REFERENCES Users(user_id)
+);
+CREATE TABLE Reviews (
+    review_id INT PRIMARY KEY AUTO_INCREMENT,
+    hostel_id INT,
+    customer_id INT,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hostel_id) REFERENCES Hostels(hostel_id),
+    FOREIGN KEY (customer_id) REFERENCES Users(user_id)
+);
+CREATE TABLE Payments (
+    payment_id INT PRIMARY KEY AUTO_INCREMENT,
+    booking_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    status ENUM('pending', 'paid', 'overdue') DEFAULT 'pending',
+    modified_by INT,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id),
+    FOREIGN KEY (modified_by) REFERENCES Users(user_id)
+);
+CREATE TABLE Fees (
+    fee_id INT PRIMARY KEY AUTO_INCREMENT,
+    hostel_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hostel_id) REFERENCES Hostels(hostel_id)
+);
+
+[python] Let's create a schema for a hostel or PG booking site. The schema will include tables for users, hostels, bookings, reviews, and fees. Here's a detailed outline:
+
+Users: To store user information, including admin, hostel owners, and customers.
+Hostels: To store information about hostels or PGs.
+Bookings: To manage booking details.
+Reviews: To store customer reviews of hostels or PGs.
+Payments: To handle rent payments and status updates by hostel owners.
+Fees: To track fees charged by the platform for showing hostels and PGs.
+Table Schemas
+1. Users
+sql
+Copy code
+CREATE TABLE Users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    role ENUM('admin', 'hostel_owner', 'customer') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+2. Hostels
+sql
+Copy code
+CREATE TABLE Hostels (
+    hostel_id INT PRIMARY KEY AUTO_INCREMENT,
+    owner_id INT,
+    name VARCHAR(100) NOT NULL,
+    address TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES Users(user_id)
+);
+3. Bookings
+sql
+Copy code
+CREATE TABLE Bookings (
+    booking_id INT PRIMARY KEY AUTO_INCREMENT,
+    hostel_id INT,
+    customer_id INT,
+    check_in_date DATE NOT NULL,
+    check_out_date DATE NOT NULL,
+    status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hostel_id) REFERENCES Hostels(hostel_id),
+    FOREIGN KEY (customer_id) REFERENCES Users(user_id)
+);
+4. Reviews
+sql
+Copy code
+CREATE TABLE Reviews (
+    review_id INT PRIMARY KEY AUTO_INCREMENT,
+    hostel_id INT,
+    customer_id INT,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hostel_id) REFERENCES Hostels(hostel_id),
+    FOREIGN KEY (customer_id) REFERENCES Users(user_id)
+);
+5. Payments
+sql
+Copy code
+CREATE TABLE Payments (
+    payment_id INT PRIMARY KEY AUTO_INCREMENT,
+    booking_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    status ENUM('pending', 'paid', 'overdue') DEFAULT 'pending',
+    modified_by INT,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id),
+    FOREIGN KEY (modified_by) REFERENCES Users(user_id)
+);
+6. Fees
+sql
+Copy code
+CREATE TABLE Fees (
+    fee_id INT PRIMARY KEY AUTO_INCREMENT,
+    hostel_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hostel_id) REFERENCES Hostels(hostel_id)
+);
+Explanation
+Users Table: Stores all user information with roles to distinguish between admins, hostel owners, and customers.
+Hostels Table: Stores details about each hostel or PG, linked to the hostel owner.
+Bookings Table: Manages booking information, linked to hostels and customers.
+Reviews Table: Allows customers to leave reviews for hostels they've stayed in.
+Payments Table: Handles rent payments, with statuses to track payment stages, and allows hostel owners to update payment status.
+Fees Table: Tracks fees charged to hostel owners for listing their hostels on the platform.
+This schema provides a comprehensive structure to manage a hostel or PG booking site, covering user roles, booking management, reviews, payment tracking, and fee management.
+
+and also give funcationlies
+
+[python] Let's outline the functionalities for each role (admin, hostel owner, customer) based on the schema provided. These functionalities will cover the essential operations each role can perform on the hostel or PG booking site.
+
+Admin Functionalities
+User Management:
+
+Create, read, update, and delete users (admins, hostel owners, customers).
+View all users and their roles.
+Hostel Management:
+
+Approve or reject hostel listings.
+View all hostels and their details.
+Booking Management:
+
+View all bookings.
+Update booking statuses (e.g., confirmed, cancelled).
+Review Management:
+
+View and delete inappropriate reviews.
+Fee Management:
+
+Set and update fees for hostel listings.
+View all fees collected.
+Hostel Owner Functionalities
+Hostel Management:
+
+Create, read, update, and delete hostel listings.
+View bookings for their hostels.
+Booking Management:
+
+Confirm or cancel bookings.
+View booking history for their hostels.
+Payment Management:
+
+Update payment statuses (e.g., pending, paid, overdue).
+View payment history for their hostels.
+Fee Management:
+
+View fees charged by the platform.
+Customer Functionalities
+User Profile Management:
+
+Create, read, update, and delete their profile information.
+Hostel Search and Booking:
+
+Search for hostels based on various filters (location, price, amenities, etc.).
+Book hostels and manage their bookings (view status, cancel).
+Review Management:
+
+Leave reviews for hostels they've stayed in.
+View and update their reviews.
+Payment Management:
+
+Make payments for bookings.
+View payment history.
+Detailed Functionalities with Example API Endpoints
+Admin Functionalities
+User Management
+
+Create User: POST /admin/users
+View Users: GET /admin/users
+Update User: PUT /admin/users/{user_id}
+Delete User: DELETE /admin/users/{user_id}
+Hostel Management
+
+Approve Hostel: PUT /admin/hostels/{hostel_id}/approve
+Reject Hostel: PUT /admin/hostels/{hostel_id}/reject
+View Hostels: GET /admin/hostels
+Booking Management
+
+View Bookings: GET /admin/bookings
+Update Booking Status: PUT /admin/bookings/{booking_id}
+Review Management
+
+View Reviews: GET /admin/reviews
+Delete Review: DELETE /admin/reviews/{review_id}
+Fee Management
+
+Set Fees: POST /admin/fees
+View Fees: GET /admin/fees
+Hostel Owner Functionalities
+Hostel Management
+
+Create Hostel: POST /owner/hostels
+View Hostels: GET /owner/hostels
+Update Hostel: PUT /owner/hostels/{hostel_id}
+Delete Hostel: DELETE /owner/hostels/{hostel_id}
+Booking Management
+
+View Bookings: GET /owner/bookings
+Confirm Booking: PUT /owner/bookings/{booking_id}/confirm
+Cancel Booking: PUT /owner/bookings/{booking_id}/cancel
+Payment Management
+
+Update Payment Status: PUT /owner/payments/{payment_id}
+View Payments: GET /owner/payments
+Fee Management
+
+View Fees: GET /owner/fees
+Customer Functionalities
+User Profile Management
+
+Update Profile: PUT /customer/profile
+Delete Profile: DELETE /customer/profile
+Hostel Search and Booking
+
+Search Hostels: GET /hostels?filters
+Book Hostel: POST /customer/bookings
+View Bookings: GET /customer/bookings
+Cancel Booking: PUT /customer/bookings/{booking_id}/cancel
+Review Management
+
+Leave Review: POST /customer/reviews
+View Reviews: GET /customer/reviews
+Update Review: PUT /customer/reviews/{review_id}
+Payment Management
+
+Make Payment: POST /customer/payments
+View Payments: GET /customer/payments
+
+User Management:
+
+Create, read, update, and delete users (admins, hostel owners, customers).
+View all users and their roles.
+Hostel Management:
+
+Approve or reject hostel listings.
+View all hostels and their details.
+Booking Management:
+
+View all bookings.
+Update booking statuses (e.g., confirmed, cancelled).
+Review Management:
+
+View and delete inappropriate reviews.
+Fee Management:
+
+Set and update fees for hostel listings.
+View all fees collected.
+Hostel Owner Functionalities
+Hostel Management:
+
+Create, read, update, and delete hostel listings.
+View bookings for their hostels.
+Booking Management:
+
+Confirm or cancel bookings.
+View booking history for their hostels.
+Payment Management:
+
+Update payment statuses (e.g., pending, paid, overdue).
+View payment history for their hostels.
+Fee Management:
+
+View fees charged by the platform.
+Customer Functionalities
+User Profile Management:
+
+Create, read, update, and delete their profile information.
+Hostel Search and Booking:
+
+Search for hostels based on various filters (location, price, amenities, etc.).
+Book hostels and manage their bookings (view status, cancel).
+Review Management:
+
+Leave reviews for hostels they've stayed in.
+View and update their reviews.
+Payment Management:
+
+Make payments for bookings.
+View payment history.
+Detailed Functionalities with Example API Endpoints
+Admin Functionalities
+User Management
+
+Create User: POST /admin/users
+View Users: GET /admin/users
+Update User: PUT /admin/users/{user_id}
+Delete User: DELETE /admin/users/{user_id}
+Hostel Management
+
+Approve Hostel: PUT /admin/hostels/{hostel_id}/approve
+Reject Hostel: PUT /admin/hostels/{hostel_id}/reject
+View Hostels: GET /admin/hostels
+Booking Management
+
+View Bookings: GET /admin/bookings
+Update Booking Status: PUT /admin/bookings/{booking_id}
+Review Management
+
+View Reviews: GET /admin/reviews
+Delete Review: DELETE /admin/reviews/{review_id}
+Fee Management
+
+Set Fees: POST /admin/fees
+View Fees: GET /admin/fees
+Hostel Owner Functionalities
+Hostel Management
+
+Create Hostel: POST /owner/hostels
+View Hostels: GET /owner/hostels
+Update Hostel: PUT /owner/hostels/{hostel_id}
+Delete Hostel: DELETE /owner/hostels/{hostel_id}
+Booking Management
+
+View Bookings: GET /owner/bookings
+Confirm Booking: PUT /owner/bookings/{booking_id}/confirm
+Cancel Booking: PUT /owner/bookings/{booking_id}/cancel
+Payment Management
+
+Update Payment Status: PUT /owner/payments/{payment_id}
+View Payments: GET /owner/payments
+Fee Management
+
+View Fees: GET /owner/fees
+Customer Functionalities
+User Profile Management
+
+Update Profile: PUT /customer/profile
+Delete Profile: DELETE /customer/profile
+Hostel Search and Booking
+
+Search Hostels: GET /hostels?filters
+Book Hostel: POST /customer/bookings
+View Bookings: GET /customer/bookings
+Cancel Booking: PUT /customer/bookings/{booking_id}/cancel
+Review Management
+
+Leave Review: POST /customer/reviews
+View Reviews: GET /customer/reviews
+Update Review: PUT /customer/reviews/{review_id}
+Payment Management
+
+Make Payment: POST /customer/payments
+View Payments: GET /customer/payments
+Summary
+These functionalities provide a comprehensive set of operations for admins, hostel owners, and customers, enabling them to manage users, hostels, bookings, reviews, and payments effectively. The example API endpoints illustrate how these operations might be structured in a RESTful web service.
+
+write funcation of all given endpoints
+
+using fastapi
